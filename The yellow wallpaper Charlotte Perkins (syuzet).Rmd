@@ -1,0 +1,129 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+install.packages("syuzhet")
+install.packages("RColorBrewer")
+install.packages("wordcloud")
+install.packages("tm")
+````
+
+```{r}
+library(syuzhet)
+library(RColorBrewer)
+library(wordcloud)
+library(tm)
+```
+```{r}
+getwd()
+
+````
+```{r}
+text.v <- scan("yellow.txt", what="character", sep="\n")
+```
+```{r}
+text_string <- scan(file = "yellow.txt", fileEncoding = "UTF-8", what = character(), sep = "\n", allowEscapes = T)
+```
+
+```{r}
+text_words <- get_tokens(text_string)
+head(text_words)
+```
+```{r}
+length(text_words)
+```
+```{r}
+sentence_vector <- get_sentences(text_string)
+length(sentence_vector)
+```
+
+```{r}
+sentiment_scores <- get_nrc_sentiment(text_words, lang="english")
+````
+
+```{r}
+head(sentiment_scores)
+```
+
+```{r}
+summary(sentiment_scores)
+```
+
+```{r}
+barplot(
+  colSums(prop.table(sentiment_scores[, 1:8])),
+  space = 0.2,
+  horiz = FALSE,
+  las = 1,
+  cex.names = 0.7,
+  col = brewer.pal(n = 8, name = "Set3"),
+  main = "The Yellow Wallpaper by Charlotte Perkins",
+  sub = "Analysis by Jasone Lasuen",
+  xlab="Sentiments", ylab = NULL)
+
+```
+
+```{r}
+barplot(colSums(prop.table(sentiment_scores[, 1:8])))
+```
+
+```{r}
+fear_words <- text_words[sentiment_scores$fear> 0]
+```
+
+```{r}
+fear_word_order <- sort(table(unlist(fear_words)), decreasing = TRUE)
+head(fear_word_order, n = 12)
+```
+```{r}
+length(fear_word_order)
+```
+```{r}
+cloud_emotions_data <- c(
+  paste(text_words[sentiment_scores$fear> 0], collapse = " "),
+  paste(text_words[sentiment_scores$joy > 0], collapse = " "),
+  paste(text_words[sentiment_scores$anger > 0], collapse = " "),
+  paste(text_words[sentiment_scores$disgust > 0], collapse = " "))
+
+cloud_emotions_data <- iconv(cloud_emotions_data, "latin1", "UTF-8")
+````
+
+```{r}
+cloud_corpus <- Corpus(VectorSource(cloud_emotions_data))
+```
+
+```{r}
+cloud_tdm <- TermDocumentMatrix(cloud_corpus)
+cloud_tdm <- as.matrix(cloud_tdm)
+head(cloud_tdm)
+```
+```{r}
+colnames(cloud_tdm) <- c('fear', 'happinness', 'anger', 'joy')
+head(cloud_tdm)
+``````
+
+```{r}
+set.seed(757) # this can be set to any integer
+comparison.cloud(cloud_tdm, random.order = FALSE,
+                 colors = c("green", "red", "orange", "blue"),
+                 title.size = 1, max.words = 50, scale = c(2.5, 1), rot.per = 0.4)
+```
+
+```{r}
+sentiment_valence <- (sentiment_scores$negative *-1) + sentiment_scores$positive
+```
+
+```{r}
+simple_plot(sentiment_valence)
+```
+
+
+
+
+
+
+
+
+
