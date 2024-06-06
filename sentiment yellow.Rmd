@@ -1,0 +1,80 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+```{r}
+library(tidyverse)
+library(tidytext)
+library(gutenbergr)
+
+data(stop_words)
+
+yellow <- gutenberg_download(1952) %>% 
+           unnest_tokens(word, text) %>% 
+           anti_join(stop_words)
+
+sentiments <- get_sentiments("nrc")
+
+yellow_sentiments <- yellow %>% inner_join(sentiments)
+                      
+yellow_sentiments %>%
+  count(sentiment) %>%
+  mutate(sentiment = reorder(sentiment, n)) %>%
+  ggplot(aes(n, sentiment)) + geom_col() + labs(y=NULL)
+```
+```{r}
+yellow <- gutenberg_download(1952) %>% 
+           mutate(linenumber=row_number()) %>% 
+           unnest_tokens(word, text) %>% 
+           anti_join(stop_words)
+
+yellow_sentiments <- yellow %>% 
+                      inner_join(sentiments) %>% 
+                      count(block=linenumber%/%80, sentiment)
+
+yellow_sentiments <- yellow_sentiments %>% 
+                      pivot_wider(names_from = sentiment, 
+                                  values_from = n, 
+                                  values_fill = 0)
+
+yellow_sentiments <- yellow_sentiments %>%
+                      mutate(sentiment = positive - negative)
+
+yellow_sentiments %>% ggplot(aes(block, sentiment)) + geom_col()
+```
+```{r}
+block_size = 50
+
+yellow %>% 
+  inner_join(sentiments) %>% 
+  count(block=linenumber%/%block_size, sentiment) %>%
+  pivot_wider(names_from = sentiment, 
+              values_from = n, 
+              values_fill = 0) %>%
+  mutate(sentiment = positive - negative) %>%
+  ggplot(aes(block, sentiment)) + geom_col()
+
+```
+```{r}
+block_size = 50
+
+yellow %>% 
+  inner_join(sentiments) %>% 
+  count(block=linenumber%/%block_size, sentiment) %>%
+  pivot_wider(names_from = sentiment, 
+              values_from = n, 
+              values_fill = 0) %>%
+  mutate(sentiment = positive - negative) %>%
+  ggplot(aes(block, sentiment)) + geom_col(color = "yellow")
+
+```
+
+
+
+
+
+
+
+
+
+

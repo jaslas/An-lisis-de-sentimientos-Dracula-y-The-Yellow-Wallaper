@@ -1,0 +1,118 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+library(tidyverse)
+library(tidytext)
+sentiments <- get_sentiments("nrc")
+sentiments
+```
+```{r}
+sentiments %>% count(sentiment)
+```
+```{r}
+library(gutenbergr)
+data(stop_words)
+
+dracula <- gutenberg_download(45839) %>%
+              unnest_tokens(word, text) %>%
+              anti_join(stop_words)
+dracula
+```
+
+```{r}
+dracula_sentiments <- dracula %>% inner_join(sentiments)
+dracula_sentiments
+```
+```{r}
+dracula_sentiments %>% 
+  filter(sentiment=="positive") %>%
+  count(word, sort=TRUE)  
+```
+```{r}
+dracula_sentiments %>%
+  filter(sentiment=="joy") %>%
+  count(word) %>% 
+  summarise(total=sum(n))
+```
+```{r}
+dracula_sentiments %>% count(sentiment)
+```
+```{r}
+dracula_sentiments %>%
+  count(sentiment) %>%
+  mutate(sentiment = reorder(sentiment, n)) %>%
+  ggplot(aes(n, sentiment)) + geom_col() + labs(y=NULL)
+```
+```{r}
+dracula <- gutenberg_download(45839) %>% 
+              mutate(linenumber=row_number()) %>% 
+              unnest_tokens(word, text) %>% anti_join(stop_words)
+dracula
+```
+```{r}
+dracula_sentiments <- dracula %>% 
+                         inner_join(sentiments)
+dracula_sentiments
+```
+```{r}
+dracula_blocks <- dracula_sentiments %>% 
+                     count(block=linenumber%/%80, sentiment)
+dracula_blocks
+```
+```{r}
+dracula_blocks <- dracula_blocks %>% 
+                     pivot_wider(names_from = sentiment, 
+                                 values_from = n, 
+                                 values_fill = 0)
+dracula_blocks
+```
+```{r}
+dracula_blocks <- dracula_blocks %>%
+                         mutate(sentiment = positive - negative)
+dracula_blocks
+```
+```{r}
+dracula_blocks %>% ggplot(aes(block, sentiment)) + geom_col()
+```
+```{r}
+dracula_blocks %>% ggplot(aes(block, joy)) + geom_col()
+```
+```{r}
+dracula_blocks %>% ggplot(aes(block, positive)) + geom_col()
+```
+```{r}
+dracula_blocks %>% ggplot(aes(block, negative)) + geom_col()
+```
+```{r}
+block_size = 50
+
+dracula %>% 
+  inner_join(sentiments) %>% 
+  count(block=linenumber%/%block_size, sentiment) %>%
+  pivot_wider(names_from = sentiment, 
+              values_from = n, 
+              values_fill = 0) %>%
+  mutate(sentiment = positive - negative) %>%
+  ggplot(aes(block, sentiment)) + geom_col()
+```
+
+```{r}
+ggplot(dracula_blocks, aes(x= block, y= sentiment, color = sentiment)) + geom_point() + labs(x = "word", y = "sentiment", title = "Sentiments Dracula")
+```
+
+```{r}
+ggplot(dracula_blocks, aes(x = sentiment)) + geom_bar(color = "red", fill = "pink")
+```
+```{r}
+ggplot(dracula_blocks, aes(x = sentiment, fill = block)) + geom_bar(bins= 20)
+```
+```{r}
+ggplot(dracula_blocks, aes(x= positive, y= sentiment, color = sentiment)) + geom_point() + labs(x = "word", y = "sentiment", title = "Sentiments Dracula") + geom_smooth(method = "lm", se = FALSE) + facet_wrap(~sentiment)
+```
+```{r}
+dracula_blocks %>% ggplot(aes(block, positive)) + geom_col(color = "green", fill = "darkgreen")
+```
+
